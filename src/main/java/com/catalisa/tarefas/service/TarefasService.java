@@ -22,7 +22,6 @@ public class TarefasService {
         return tarefasRepository.findById(id);
     }
 
-
     public Optional<Tarefas> buscarTarefaPorTitulo(String titulo) {
         return tarefasRepository.findByTitulo(titulo);
     }
@@ -52,22 +51,6 @@ public class TarefasService {
         }
 
         return tarefasRepository.save(tarefas1);
-    }
-
-    public Tarefas alterarTarefaPorTitulo(String titulo, Tarefas tarefas) {
-        Tarefas tarefas2 = buscarTarefaPorTitulo(titulo).get();
-
-        String tituloDaTarefa = "Título da Tarefa";
-        Optional<Tarefas> tarefaEncontrada = buscarTarefaPorTitulo(tituloDaTarefa);
-
-        if (tarefaEncontrada.isPresent()) {
-            // Faça algo com a tarefa encontrada
-            Tarefas tarefa = tarefaEncontrada.get();
-            System.out.println("Tarefa encontrada: " + tarefa);
-        } else {
-            System.out.println("Tarefa com o título '" + tituloDaTarefa + "' não encontrada.");
-        }
-        return tarefasRepository.save(tarefas2);
     }
 
     public void excluirTarefa(Long id){
