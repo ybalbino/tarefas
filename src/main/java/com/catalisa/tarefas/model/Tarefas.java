@@ -1,8 +1,8 @@
 package com.catalisa.tarefas.model;
 
 import lombok.*;
-
 import javax.persistence.*;
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -28,4 +28,5 @@ public class Tarefas {
 
     @Column
     private boolean status;
+
 }

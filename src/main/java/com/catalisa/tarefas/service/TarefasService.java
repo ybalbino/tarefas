@@ -1,9 +1,12 @@
 package com.catalisa.tarefas.service;
 
+import com.catalisa.tarefas.exception.TarefaNaoEncontradaExcecao;
+import com.catalisa.tarefas.exception.TarefaNaoEncontradaPorTituloException;
 import com.catalisa.tarefas.model.Tarefas;
 import com.catalisa.tarefas.repository.TarefasRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -14,47 +17,57 @@ public class TarefasService {
     @Autowired
     TarefasRepository tarefasRepository;
 
+    @Autowired
+    public TarefasService(TarefasRepository tarefasRepository) {
+        this.tarefasRepository = tarefasRepository;
+    }
+
     public List<Tarefas> buscarTodasTarefas() {
         return tarefasRepository.findAll();
     }
 
-    public Optional<Tarefas> buscarTarefaPorId(Long id) {
-        return tarefasRepository.findById(id);
+    public Tarefas buscarPorId(Long id) {
+        Optional<Tarefas> optionalTarefasModel = tarefasRepository.findById(id);
+        return optionalTarefasModel.orElseThrow(() -> new TarefaNaoEncontradaExcecao("Tarefa não encontrada com o ID: " + id));
     }
 
-    public Optional<Tarefas> buscarTarefaPorTitulo(String titulo) {
-        return tarefasRepository.findByTitulo(titulo);
+    public Optional<Tarefas> buscarPorTitulo(String titulo) {
+        return Optional.ofNullable(tarefasRepository.findByTitulo(titulo)
+                .orElseThrow(() -> new TarefaNaoEncontradaPorTituloException(titulo)));
     }
-
 
     public Tarefas cadastrarTarefa(Tarefas tarefas) {
-//        tarefas.getId();
-//        tarefas.getTitulo();
-//        tarefas.getDescricao();
-//        tarefas.getDataVencimento();
-        //pq não puxou o boolean?
         return tarefasRepository.save(tarefas);
     }
 
     public Tarefas alterarPorId(Long id, Tarefas tarefas) {
+        Optional<Tarefas> optionalTarefas = tarefasRepository.findById(id);
 
-        Tarefas tarefas1 = buscarTarefaPorId(id).get();
-
-        if (tarefas.getTitulo() != null) {
-            tarefas1.setTitulo(tarefas.getTitulo());
+        if (optionalTarefas.isPresent()) {
+            Tarefas tarefaExistente = optionalTarefas.get();
+            if (tarefas.getTitulo() != null) {
+                tarefaExistente.setTitulo(tarefas.getTitulo());
+            }
+            if (tarefas.getDescricao() != null) {
+                tarefaExistente.setDescricao(tarefas.getDescricao());
+            }
+            if (tarefas.getDataVencimento() != null) {
+                tarefaExistente.setDataVencimento(tarefas.getDataVencimento());
+            }
+            return tarefasRepository.save(tarefaExistente);
+        } else {
+            throw new TarefaNaoEncontradaExcecao("Tarefa não encontrada com ID: " + id);
         }
-        if (tarefas.getDescricao() != null) {
-            tarefas1.setDescricao(tarefas.getDescricao());
-        }
-        if (tarefas.getDataVencimento() != null) {
-            tarefas1.setDataVencimento(tarefas.getDataVencimento());
-        }
-
-        return tarefasRepository.save(tarefas1);
     }
 
-    public void excluirTarefa(Long id){
-        tarefasRepository.deleteById(id);
+
+    public void excluirTarefa(Long id) {
+        if (tarefasRepository.existsById(id)) {
+            tarefasRepository.deleteById(id);
+        } else {
+            throw new TarefaNaoEncontradaExcecao("Tarefa não encontrada com ID: " + id);
+        }
+
     }
 
 }

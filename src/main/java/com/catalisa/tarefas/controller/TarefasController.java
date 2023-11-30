@@ -1,5 +1,6 @@
 package com.catalisa.tarefas.controller;
 
+import com.catalisa.tarefas.exception.TarefaNaoEncontradaExcecao;
 import com.catalisa.tarefas.model.Tarefas;
 import com.catalisa.tarefas.service.TarefasService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,29 +21,60 @@ public class TarefasController {
     public List<Tarefas> buscaTodasTarefas() {
         return tarefasService.buscarTodasTarefas();
     }
-    @GetMapping(path = "/tarefas/{id}")
-    public Optional<Tarefas> buscarTarefaPorId(@PathVariable Long id) {
-        return tarefasService.buscarTarefaPorId(id);
+    @GetMapping(path = "/tarefa/{id}")
+    public ResponseEntity<Tarefas> buscarPorId(@PathVariable Long id) {
+        try {
+            Tarefas tarefas = tarefasService.buscarPorId(id);
+            return new ResponseEntity<>(tarefas, HttpStatus.OK);
+        } catch (TarefaNaoEncontradaExcecao e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
+
     @GetMapping(path = "/tarefa")
-    public Optional<Tarefas> buscarTarefaPorTitulo(@RequestParam String titulo) {
-        return tarefasService.buscarTarefaPorTitulo(titulo);
+    public ResponseEntity<?> buscarTarefaPorTitulo(@RequestParam String titulo) {
+        if (titulo.matches(".*\\d+.*")) {
+            return ResponseEntity.badRequest().body("O título da tarefa não pode conter números.");
+        }
+
+        Optional<Tarefas> tarefas = tarefasService.buscarPorTitulo(titulo);
+        return tarefas.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping(path = "/tarefas")
+    @PostMapping(path = "/tarefa")
     @ResponseStatus(HttpStatus.CREATED)
-    public Tarefas cadastrarTarefa(@RequestBody Tarefas tarefas) {
-        return tarefasService.cadastrarTarefa(tarefas);
+    public ResponseEntity<Tarefas> criarTarefa(@RequestBody Tarefas tarefas) {
+        try {
+            Tarefas criarTarefa = tarefasService.cadastrarTarefa(tarefas);
+            return new ResponseEntity<>(criarTarefa, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    @PutMapping(path = "/tarefas/{id}")
-    public Tarefas alterarTarefaId(@PathVariable Long id, @RequestBody Tarefas tarefas) {
-        return tarefasService.alterarPorId(id, tarefas);
+    @PutMapping(path = "/tarefa/{id}")
+    public ResponseEntity<Tarefas> atualizarTarefa(@PathVariable Long id, @RequestBody Tarefas tarefas) {
+        try {
+            Tarefas  atualizarTarefa = tarefasService.alterarPorId(id, tarefas);
+            return new ResponseEntity<>(atualizarTarefa, HttpStatus.OK);
+        } catch (TarefaNaoEncontradaExcecao e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
-    @DeleteMapping(path = "/tarefas/{id}")
-    public void excluirTareta(@PathVariable Long id) {
-        tarefasService.excluirTarefa(id);
-    }
 
+    @DeleteMapping(path = "/tarefa/{id}")
+    public ResponseEntity<Void> deleteTarefa(@PathVariable Long id) {
+        try {
+            tarefasService.excluirTarefa(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (TarefaNaoEncontradaExcecao e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
+
+
